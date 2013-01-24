@@ -1,7 +1,7 @@
 <?php
 
 /*
- *	PHP File Synchronization Script
+ *  PHP File Synchronization Script
  *  Copyright (C) 2013 Sergio Bobillier Ceballos <sergio.bobillier@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -462,11 +462,17 @@ function copy_directory($path, $destination)
 	// folder to the destination directory.
 
 	$files = scandir($path);
+
 	foreach($files as $file)
 	{
-		// We skeep hidden files and directories
+		// We skip the current and parent directories
 
-		if(substr($file, 0, 1) == ".")
+		if($file == "." || $file == "..")
+			continue;
+
+		// If we have to, we skip hidden files and directories.
+
+		if(SKIP_HIDDEN == true && substr($file, 0, 1) == ".")
 			continue;
 
 		$path_to_copy = $path . "/" . $file;
@@ -481,15 +487,17 @@ function copy_directory($path, $destination)
 		if(is_dir($path_to_copy))
 		{
 			$result = copy_directory($path_to_copy, $destination_path);
+
 			if(!$result)
 				return false;
 		}
 		else
 		{
 			$result = true;
+
 			if(!SIMULATE)
 				$result = copy($path_to_copy, $destination_path);
-
+			
 			if(!$result)
 				return false;
 		}
