@@ -19,6 +19,14 @@
  *
  */
 
+/** This class synchronize two file system paths. After running the
+ *  synchronization it is guaranteed that both paths will have the same files.
+ *
+ *  @author Sergio Bobillier Ceballos
+ *
+ */
+
+
 class File_Synchronizer
 {
 	/** If set to true it makes the script print every actions it performs.
@@ -74,6 +82,25 @@ class File_Synchronizer
 	 */
 
 	private $path_b = null;
+
+	/** An UNIX timestamp that tells the class when the two paths were last
+	 *  synchronized. This timestamp is used to locate files that were changed
+	 *  added or updated after the last synchronization and synchronize only
+	 *  those files.
+	 *
+	 *  @var int
+	 *
+	 */
+
+	private $last_sync_time = 0;
+
+	/** The UNIX timestamp of the date and time when the synchronization started
+	 *  this timestamp is used to avoid copying files twice (in one direction
+	 *  and then in the other)
+	 *
+	 */
+
+	private $sync_start_time = 0;
 
 	/** Class constructor. Copy settings from settings array into class
 	 *  attributes if the corresponding setter function exists.
@@ -246,125 +273,92 @@ class File_Synchronizer
 		return $this->path_b;
 	}
 
+	/** Sets the UNIX timestamp of the time and date when the two paths were
+	 *  last synchronized. This timestamp is used to determine if files are to
+	 *  be copied from one path to the other or deleted.
+	 *
+	 *  @param int $last_sync_time An integer with the the UNIX timestamp of the
+	 *  	last synchronization time.
+	 *
+	 */
+
+	public function set_last_sync_time($last_sync_time)
+	{
+		$this->last_sync_time = $last_sync_time;
+	}
+
+	/** Returns a unix timestamp with the date and time when the last
+	 *  syncrhonization took place. This function just returns the value that
+	 *  the client set it doesn't determine it automatically.
+	 *
+	 */
+
+	public function get_last_sync_time($last_sync_time)
+	{
+		return $this->last_sync_time;
+	}
+
+	/** Start the synchronization process. Checks both paths and then sync them.
+	 *
+	 *  @param string $path_a One of the paths to sync. If ommited then the
+	 *  	function will use the path configured in the $path_a class
+	 *  	attribute.
+	 *
+	 *  @param string $path_b One of the paths to sync. If ommited then the
+	 *  	function will use the path configured in the $path_b class
+	 *  	attribute.
+	 *
+	 *  @throws Synchronization_Exception If the synchronization process fails.
+	 *
+	 */
+
 	public function start_sync($path_a = null, $path_b = null)
 	{
-		/*******************************************************************************
+		if($path_a == null)
+			$path_a = $this->path_a;
+
+		if($path_b == null)
+			$path_b = $this->path_b;
+
+		/***********************************************************************
 		 * Path check
 		 *
-		 * Check that the two given paths are valid, accesible and that they are both
-		 * directories.
+		 * Checks to make sure both paths were given and that the both paths are
+		 * valid, accesible and are both directories.
 		 *
 		 */
 
-		if(!is_dir($path_a))
-		{
-			echo "FATAL: The path '" . $path_a . " is not accesible or is not a directory\n.";
-			exit(1);
-		}
+		if($path_a == null || $path_b == null)
+			throw new Invalid_Path_Supplied_Exception("One or both paths are missing. Both paths must be supplied");
+
+		if(!is_dir($path_a))	
+			throw new Invalid_Path_Supplied_Exception("The path " . $path_a . " is not accessible or is not a directory\n.");
 
 		if(!is_dir($path_b))
-		{
-			echo "FATAL: The path '" . $path_b . " is not accesible or is not a directory\n";
-			exit(2);
-		}
-
-
-		/*******************************************************************************
-		 * Last synchronization date
-		 *
-		 * The program tries to load the date of the last synchronization from a file
-		 * called .last-sync in the current path. The field should contain the unix
-		 * timestamp of the last synchronization.
-		 *
-		 * If the file cannot be opened or the contents are not valid the script asumes
-		 * that the two paths have never been synchronized.
-		 *
-		 */
-
-		echo "Trying to retrieve the time of the last synchronization...\n";
-
-		$last_sync_time = 0;
-
-		$last_sync_file_name = ".last-sync";
-		$last_sync_file = @fopen($last_sync_file_name, "r");
-
-		if($last_sync_file)
-		{
-			$last_sync_time = fread($last_sync_file, 20);
-			
-			$reg_ex = "/^[0-9]+$/";
-			if(!preg_match($reg_ex, $last_sync_time))
-			{
-				echo "Last synchronization time does not have the right format.\n";
-				echo "Asuming the paths have never been synchronized before.\n";
-				$last_sync_time = 0;
-			}
-
-			fclose($last_sync_file);
-		}
-		else
-		{
-			echo "Could not open file asuming the paths have never been synchronized\n";
-		}
+			throw new Invalid_Path_Supplied_Exception("The path '" . $path_b . " is not accessible or is not a directory\n";
 
 		/*******************************************************************************
 		 * Start the synchronization
 		 *
 		 */
 
-		// We save the time when the synchronization began so that we do not copy files
-		// unnecesarily.
+		// We save the time when the synchronization began so that we do not
+		// copy files unnecesarily.
 
-		$sync_start_time = time();
+		$this->sync_start_time = time();
 
-		if(DEBUG_MODE)
+		// We synchronize the paths in both directions. We do not need to put a
+		// try/catch block the calling function should catch it.
+
+		if($this->debug_mode)
 			echo "Syncrhonizng '" . $path_a . "' -> '" . $path_b . "'\n";
 
-		$result = sync_paths($path_a, $path_b, $last_sync_time, $sync_start_time);
+		$result = sync_paths($path_a, $path_b);
 
-		if($result != 0)
-		{
-			echo "ERROR: The synchronization process have failed!. The exit code is: " . $result . "\n";
-			exit($result);
-		}
-
-		if(DEBUG_MODE)
+		if($this->debug_mode)
 			echo "Syncrhonizng '" . $path_b . "' -> '" . $path_a . "'\n";
 
-		$result = sync_paths($path_b, $path_a, $last_sync_time, $sync_start_time);
-
-		if($result != 0)
-		{
-			echo "ERROR: The synchronization process have failed!. The exit code is: " . $result . "\n";
-			exit($result);
-		}
-
-		// We save the current time to the file. This is the time the last
-		// syncrhonization was made.
-
-		echo "Saving the last synchronization time to disk.\n";
-
-		$last_sync_time = time();
-
-		if(!SIMULATE)
-		{
-			$last_sync_file = @fopen($last_sync_file_name, "w");
-			
-			if($last_sync_file)
-			{
-				fwrite($last_sync_file, time());
-				fclose($last_sync_file);
-			}
-			else
-			{
-				echo "Could not save the last synchronization time, unable to open the file for writing.\n";
-			}
-		}
-
-		// End of the script
-
-		echo "Syncrhonization succesful!\n";
-		exit(0);
+		$result = sync_paths($path_b, $path_a);
 	}
 
 	/** Synchronizes two paths. After the syncrhonization is guaranteed that the
@@ -379,7 +373,7 @@ class File_Synchronizer
 	 *
 	 */
 
-	private function sync_paths($path_a, $path_b, $last_sync_time, $sync_start_time)
+	private function sync_paths($path_a, $path_b)
 	{
 		$files_a = scandir($path_a);
 
