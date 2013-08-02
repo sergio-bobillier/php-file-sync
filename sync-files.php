@@ -79,7 +79,7 @@ else
 $file_synchronizer->set_last_sync_time($last_sync_time);
 
 try
-(
+{
 	// Start the synchronization
 
 	$file_synchronizer->start_sync();
@@ -91,7 +91,7 @@ try
 
 	$last_sync_time = time();
 
-	if($file_synchronizer->get_simulate())
+	if(!$file_synchronizer->get_simulate())
 	{
 		$last_sync_file = @fopen($last_sync_file_name, "w");
 			
@@ -110,7 +110,7 @@ try
 
 	echo "Syncrhonization succesful!\n";
 	exit(0);
-)
+}
 catch(Synchronization_Exception $sync_ex)
 {
 	echo "ERROR: The synchronization process have failed!. The exit code is: " . $sync_ex->get_exit_code() . "\n";

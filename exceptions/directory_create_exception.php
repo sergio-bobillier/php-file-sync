@@ -19,7 +19,7 @@
  *
  */
 
-require_once("synchronization_exception.php")
+require_once("synchronization_exception.php");
 
 /** Exception to be thrown when the application fails to create a directory in
  *  one  of the paths.

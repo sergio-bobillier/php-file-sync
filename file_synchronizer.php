@@ -24,7 +24,7 @@ require_once("exceptions/resource_missmatch_exception.php");
 require_once("exceptions/file_copy_exception.php");
 require_once("exceptions/file_delete_exception.php");
 require_once("exceptions/directory_remove_exception.php");
-require_once("exception/directory_create_exception.php");
+require_once("exceptions/directory_create_exception.php");
 
 /** This class synchronize two file system paths. After running the
  *  synchronization it is guaranteed that both paths will have the same files.
@@ -116,7 +116,7 @@ class File_Synchronizer
 
 	public function __construct($settings = null)
 	{
-		if($setting != null && is_array($settings))
+		if($settings != null && is_array($settings))
 		{
 			foreach($settings as $setting => $value)
 			{
@@ -362,12 +362,12 @@ class File_Synchronizer
 		if($this->debug_mode)
 			echo "Syncrhonizng '" . $path_a . "' -> '" . $path_b . "'\n";
 
-		$result = sync_paths($path_a, $path_b);
+		$this->sync_paths($path_a, $path_b);
 
 		if($this->debug_mode)
 			echo "Syncrhonizng '" . $path_b . "' -> '" . $path_a . "'\n";
 
-		$result = sync_paths($path_b, $path_a);
+		$this->sync_paths($path_b, $path_a);
 	}
 
 	/** Synchronizes two paths. After the syncrhonization is guaranteed that the
@@ -376,6 +376,10 @@ class File_Synchronizer
 	 *  @param string $path_a One of the paths.
 	 *
 	 *  @param string $path_b The other path.
+	 *
+	 *  @throws Synchronization_Exception If the synchronization process fails.
+	 *  	(The function can throw any of the classes that inherit from
+	 *  	Synchronization_Exception depending on where the error happens.)
 	 *
 	 */
 
@@ -433,7 +437,7 @@ class File_Synchronizer
 					// occurr while doing that synchronization an exception will
 					// be thrown.
 
-					sync_paths($new_path_a, $new_path_b);
+					$this->sync_paths($new_path_a, $new_path_b);
 				}
 				else
 				{
@@ -470,7 +474,7 @@ class File_Synchronizer
 					$copy_file = true;
 					$copy_file = $copy_file && ($last_modify_time_a > $this->last_sync_time);
 					$copy_file = $copy_file && ($last_modify_time_a > $last_modify_time_b);
-					$copy_file = $copy_file && ($last_modify_time_a < $$this->sync_start_time);
+					$copy_file = $copy_file && ($last_modify_time_a < $this->sync_start_time);
 
 					// 4. If USE_CHECKSUM is true, the checksums of the two
 					//    versions of the file must differ.
@@ -533,7 +537,7 @@ class File_Synchronizer
 						// The file is a directory, we have to recursively
 						// delete it and all its files and sub-folders.
 
-						remove_directory($new_path_a);
+						$this->remove_directory($new_path_a);
 					}
 					else
 					{
@@ -561,7 +565,7 @@ class File_Synchronizer
 
 					if($is_directory)
 					{
-						copy_directory($new_path_a, $new_path_b);
+						$this->copy_directory($new_path_a, $new_path_b);
 					}
 					else
 					{
@@ -615,7 +619,7 @@ class File_Synchronizer
 			
 			if(is_dir($path_to_delete))
 			{
-				remove_directory($path_to_delete);
+				$this->remove_directory($path_to_delete);
 			}
 			else
 			{
@@ -704,7 +708,7 @@ class File_Synchronizer
 
 			if(is_dir($path_to_copy))
 			{
-				copy_directory($path_to_copy, $destination_path);
+				$this->copy_directory($path_to_copy, $destination_path);
 			}
 			else
 			{

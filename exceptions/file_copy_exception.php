@@ -19,7 +19,7 @@
  *
  */
 
-require_once("synchronization_exception.php")
+require_once("synchronization_exception.php");
 
 /** Exception to be thrown when the copy of a file from one path to the other
  *  fails.

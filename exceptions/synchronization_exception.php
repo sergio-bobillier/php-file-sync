@@ -34,7 +34,7 @@ abstract class Synchronization_Exception extends Exception
 	 *
 	 */
 
-	protected exit_code;
+	protected $exit_code;
 
 	/** Returns the exception's exit code.
 	 *
