@@ -19,28 +19,24 @@
  *
  */
 
-/** Base class por all syncrhonization exceptions.
+require_once("synchronization_exception.php");
+
+/** Exception to be thrown when a file with the same name is a directory in one
+ *  of the paths and a file in the other.
  *
  *  @author Sergio Bobillier Ceballos
  *
  */
 
-abstract class Synchronization_Exception extends Exception
+class Resource_Missmatch_Exception extends Synchronization_Exception
 {
-	/** The exception's exit code. It will be returned to the system when the
-	 *  script is run from CLI.
+	/** The exit code for this exception.
 	 *
 	 *  @var int
 	 *
 	 */
 
-	protected exit_code;
-
-	/** Returns the exception's exit code.
-	 *
-	 *  @return int The exception's exit code.
-	 *
-	 */
-
-	public function get_exit_code() { return $this->exit_code; }
+	protected $exit_code = 2;
 }
+
+?>

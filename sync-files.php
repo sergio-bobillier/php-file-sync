@@ -60,8 +60,8 @@ $last_sync_file = @fopen($last_sync_file_name, "r");
 if($last_sync_file)
 {
 	$last_sync_time = fread($last_sync_file, 20);
-	
 	$reg_ex = "/^[0-9]+$/";
+	
 	if(!preg_match($reg_ex, $last_sync_time))
 	{
 		echo "Last synchronization time does not have the right format.\n";
@@ -114,9 +114,7 @@ try
 catch(Synchronization_Exception $sync_ex)
 {
 	echo "ERROR: The synchronization process have failed!. The exit code is: " . $sync_ex->get_exit_code() . "\n";
-	echo "The error message is:\n";
-	echo "\t" . $sync_ex->getMessage();
-
+	echo "\t" . $sync_ex->getMessage() . "\n";
 	exit($sync_ex->get_exit_code());
 }
 

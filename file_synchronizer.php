@@ -19,6 +19,13 @@
  *
  */
 
+require_once("exceptions/invalid_path_supplied_exception.php");
+require_once("exceptions/resource_missmatch_exception.php");
+require_once("exceptions/file_copy_exception.php");
+require_once("exceptions/file_delete_exception.php");
+require_once("exceptions/directory_remove_exception.php");
+require_once("exception/directory_create_exception.php");
+
 /** This class synchronize two file system paths. After running the
  *  synchronization it is guaranteed that both paths will have the same files.
  *
@@ -309,6 +316,8 @@ class File_Synchronizer
 	 *  	attribute.
 	 *
 	 *  @throws Synchronization_Exception If the synchronization process fails.
+	 *  	(The function can throw any of the classes that inherit from
+	 *  	Synchronization_Exception depending on where the error ocurred)
 	 *
 	 */
 
@@ -332,10 +341,10 @@ class File_Synchronizer
 			throw new Invalid_Path_Supplied_Exception("One or both paths are missing. Both paths must be supplied");
 
 		if(!is_dir($path_a))	
-			throw new Invalid_Path_Supplied_Exception("The path " . $path_a . " is not accessible or is not a directory\n.");
+			throw new Invalid_Path_Supplied_Exception("The path '" . $path_a . "' is not accessible or is not a directory.");
 
 		if(!is_dir($path_b))
-			throw new Invalid_Path_Supplied_Exception("The path '" . $path_b . " is not accessible or is not a directory\n";
+			throw new Invalid_Path_Supplied_Exception("The path '" . $path_b . "' is not accessible or is not a directory.");
 
 		/*******************************************************************************
 		 * Start the synchronization
@@ -368,9 +377,6 @@ class File_Synchronizer
 	 *
 	 *  @param string $path_b The other path.
 	 *
-	 *  @return int 0 if the synchronization process was succesful, or an error code
-	 *  	if an error ocurrs.
-	 *
 	 */
 
 	private function sync_paths($path_a, $path_b)
@@ -386,7 +392,7 @@ class File_Synchronizer
 				// If we are to skip hidden files then we junp to the next
 				// iteration.
 
-				if(SKIP_HIDDEN)
+				if($this->skip_hidden)
 					continue;
 
 				// If the file is the current directory (.) or the parent directory
@@ -404,33 +410,30 @@ class File_Synchronizer
 
 			if(file_exists($new_path_b))
 			{
-				// The file exists in the other path and therfore it's type should
-				// match the type of the file in this path, in other words, if the
-				// file in this path is a directory the file in the other path
-				// should be a dirctory too.
+				// The file exists in the other path and therfore it's type
+				// should match the type of the file in this path, in other
+				// words, if the file in this path is a directory the file in
+				// the other path should be a dirctory too.
 
 				if($is_directory != is_dir($new_path_b))
 				{
 					// The type of the two files doesn't match. We abort the
-					// synchornization and return an error code.
+					// synchornization and throw an exception.
 
-					echo "ERROR: There is a resource conflict\n";
-					echo "Resource type mismatch: '" . $new_path_a . "' doesn't match '" . $new_path_b . "'\n";
-					return 3;
+					throw new Resource_Missmatch_Exception("Resource type mismatch: '" . $new_path_a . "' doesn't match '" . $new_path_b . "'");
 				}
 				
 				if($is_directory)
 				{
-					if(DEBUG_MODE)
+					if($this->debug_mode)
 						echo "Syncrhonizng '" . $new_path_a . "' -> '" . $new_path_b . "'\n";
 
 					// We recursively synchornize the directory with it's
-					// counterpart in the other path. If the synchronization fails
-					// we abort the process and return the error code.
+					// counterpart in the other path. Note that if an error
+					// occurr while doing that synchronization an exception will
+					// be thrown.
 
-					$result = sync_paths($new_path_a, $new_path_b, $last_sync_time, $sync_start_time);
-					if($result != 0)
-						return $result;
+					sync_paths($new_path_a, $new_path_b);
 				}
 				else
 				{
@@ -465,51 +468,40 @@ class File_Synchronizer
 					// 3. It wasn't modified after the syncrhonization started.
 
 					$copy_file = true;
-					$copy_file = $copy_file && ($last_modify_time_a > $last_sync_time);
+					$copy_file = $copy_file && ($last_modify_time_a > $this->last_sync_time);
 					$copy_file = $copy_file && ($last_modify_time_a > $last_modify_time_b);
-					$copy_file = $copy_file && ($last_modify_time_a < $sync_start_time);
+					$copy_file = $copy_file && ($last_modify_time_a < $$this->sync_start_time);
 
-					// 4. If USE_CHECKSUM is true, the checksums of the two versions
-					//    of the file must differ.
+					// 4. If USE_CHECKSUM is true, the checksums of the two
+					//    versions of the file must differ.
 
-					if($copy_file == true && USE_CHECKSUM == true)
+					if($copy_file == true && $this->use_checksum == true)
 					{
-						// Calculate the checksums of both files and see if they are
-						// different. If they do differ then the file is copied.
+						// Calculate the checksums of both files and see if they
+						// are different. If they do not differ then the file is
+						// not copied.
 
-						$checksums_differ = false;
-
-						if(USE_CHECKSUM == true)
-						{
-							$checksum_a = sha1_file($new_path_a);
-							$checksum_b = sha1_file($new_path_b);
-							$checksums_differ = ($checksum_a != $checksum_b);
-						}
-
-						$copy_file = $copy_file && $checksums_differ;
+						$checksum_a = sha1_file($new_path_a);
+						$checksum_b = sha1_file($new_path_b);
+						$copy_file = ($checksum_a != $checksum_b);
 					}
 
 					if($copy_file == true)
 					{
-						if(DEBUG_MODE)
+						if($this->debug_mode)
 							echo "Copying '" . $new_path_a . "' -> '" . $new_path_b . "'\n";
 
 						$result = true;
-
-						if(!SIMULATE)
-							$result = copy($new_path_a, $new_path_b);
+						if(!$this->simulate)
+							$result = @copy($new_path_a, $new_path_b);
 						
+						// If we were unable to copy the file or directory to
+						// the other path. We abort the synchronization process
+						// and throw an exception.
+
 						if(!$result)
-						{
-							// We were unable to copy the file or directory to the
-							// other path. We abort the synchronization process and
-							// return an error code.
-
-							echo "ERROR: Unable to copy the file / directory '" . $new_path_a . "' to '" . $new_path_b . "'\n";
-							return 5;
-						}
+							throw new File_Copy_Exception("Unable to copy the file '" . $new_path_a . "' to '" . $new_path_b . "'");
 					}
-
 				}
 			}
 			else
@@ -526,37 +518,36 @@ class File_Synchronizer
 					$last_modify_time = max($mtime, $ctime);
 				}
 
-				// We check if file was last modified before the last synchronization
+				// We check if file was last modified before the last
+				// synchronization
 
-				if($last_modify_time <= $last_sync_time)
+				if($last_modify_time <= $this->last_sync_time)
 				{
 					// Since the file was last modified before the last
-					// synchronization we can asume that the file was deleted on the
-					// other path after the synchronization so it should be removed
-					// from this path as well.
-
-					$result = false;
+					// synchronization we can asume that the file was deleted on
+					// the other path after the synchronization so it should be
+					// removed from this path as well.
+					
 					if($is_directory)
 					{
-						$result = remove_directory($new_path_a);
+						// The file is a directory, we have to recursively
+						// delete it and all its files and sub-folders.
+
+						remove_directory($new_path_a);
 					}
 					else
 					{
-						if(DEBUG_MODE)
+						if($this->debug_mode)
 							echo "Removing '" . $new_path_a . "'\n";
 
 						$result = true;
-						if(!SIMULATE)
+						if(!$this->simulate)
 							$result = @unlink($new_path_a);
-					}
 
-					if(!$result)
-					{
-						// We were unable to remove the file. We abort the
-						// synchronization process and return an error code.
+						// If we fail to delete the file we throw an exception.
 
-						echo "ERROR: Cannot remove file / directory '" . $new_path_a . "'\n";
-						return 4;
+						if($result == false)
+							throw new File_Delete_Exception("Couldn't delete file '" . $new_path_a . "'");
 					}
 				}
 				else
@@ -565,28 +556,24 @@ class File_Synchronizer
 					// synchronization we asume that the file is new on this path
 					// and thus we should copy it to the other path.
 
-					if(DEBUG_MODE)
+					if($this->debug_mode)
 						echo "Copying '" . $new_path_a . "' -> '" . $new_path_b . "'\n";
 
 					if($is_directory)
 					{
-						$result = copy_directory($new_path_a, $new_path_b);
+						copy_directory($new_path_a, $new_path_b);
 					}
 					else
 					{
 						$result = true;
-						if(!SIMULATE)
-							$result = copy($new_path_a, $new_path_b);
-					}
+						if(!$this->simulate)
+							$result = @copy($new_path_a, $new_path_b);
 
-					if(!$result)
-					{
-						// We were unable to copy the file or directory to the other
-						// path. We abort the synchronization process and return
-						// an error code.
+						// If we were unable to copy the file to the other path
+						// we throw an exception.
 
-						echo "ERROR: Unable to copy the file / directory '" . $new_path_a . "' to '" . $new_path_b . "'\n";
-						return 5;
+						if($result == false)
+							throw new File_Copy_Exception("Unable to copy the file '" . $new_path_a . "' to '" . $new_path_b . "'");
 					}
 				}
 			}
@@ -597,8 +584,11 @@ class File_Synchronizer
 	 *
 	 *  @param string $path The path of the directory to be removed.
 	 *
-	 *  @return boolean True if the directory was succesfuly removed, false
-	 *  	otherwise.
+	 *  @throws File_Delete_Exception If the function is unable to delete one of
+	 *  	the files in the directory.
+	 *
+	 *  @throws Directory_Remove_Exception If the function is unable to remove
+	 *  	the directory.
 	 *
 	 */
 
@@ -608,9 +598,11 @@ class File_Synchronizer
 		// remove.
 
 		$files = scandir($path);
+
 		foreach($files as $file)
 		{
 			// We skip the current directory and the parent directory.
+
 			if($file == "." || $file == "..")
 				continue;
 
@@ -618,49 +610,55 @@ class File_Synchronizer
 
 			$path_to_delete = $path . "/" . $file;
 
-			// If the current file is a Directory we recusrsively delete it, if it
-			// is a regular file we just have to remove it.
+			// If the current file is a Directory we recusrsively delete it, if
+			// it is a regular file we just have to remove it.
 			
 			if(is_dir($path_to_delete))
 			{
-				$result = remove_directory($path_to_delete);
-				if(!$result)
-					return false;
+				remove_directory($path_to_delete);
 			}
 			else
 			{
-				if(DEBUG_MODE)
+				if($this->debug_mode)
 					echo "Removing '" . $path_to_delete . "'\n";
 
 				$result = true;
-				if(!SIMULATE)
+
+				if(!$this->simulate)
 					$result = @unlink($path_to_delete);
 
+				// If we fail to remove thw file, we throw an exception.
+
 				if(!$result)
-					return false;
+					throw new File_Delete_Exception("Couldn't remove file '" . $path_to_delete . "'");
 			}
 		}
 
 		// Finally we remove the directory itself.
 
-		if(DEBUG_MODE)
+		if($this->debug_mode)
 			echo "Removing '" . $path . "'\n";
 
 		$result = true;
-		if(!SIMULATE)
+
+		if(!$this->simulate)
 			$result = rmdir($path);
 		
-		return $result;
+		// If we fail to remove the directory we throw an exception
+
+		if(!$result)
+			throw new Directory_Remove_Exception("Couldn't remove directory '" . $path . "'");
 	}
 
 	/** Recursively copy a directory, all its sub-directories and files.
 	 *
 	 *  @param string $path The path of the directory to copy.
 	 *
-	 *  @param string $destination The path of the destination folder.
+	 *  @throws Directory_Create_Exception If the function fails to create the
+	 *  	destination directory.
 	 *
-	 *  @return boolean True if the directory were copied succesfuly, false
-	 *  	otherwise.
+	 *  @throws File_Copy_Exception If the function fails to copy one of the
+	 *  	files to the destination directory.
 	 *
 	 */
 
@@ -668,15 +666,15 @@ class File_Synchronizer
 	{
 		// First we try to create the destination directory.
 
-		if(DEBUG_MODE)
+		if($this->debug_mode)
 			echo "Creating '" . $destination . "'\n";
 
 		$result = true;
-		if(!SIMULATE)
-			$result = mkdir($destination);
+		if(!$this->simulate)
+			$result = @mkdir($destination);
 
 		if(!$result)
-			return false;
+			throw new Directory_Create_Exception("Unable to create destination directory '" . $destination . "'");
 
 		// Now we scan the source directory. We try to copy each file and sub
 		// folder to the destination directory.
@@ -692,7 +690,7 @@ class File_Synchronizer
 
 			// If we have to, we skip hidden files and directories.
 
-			if(SKIP_HIDDEN == true && substr($file, 0, 1) == ".")
+			if($this->skip_hidden == true && substr($file, 0, 1) == ".")
 				continue;
 
 			$path_to_copy = $path . "/" . $file;
@@ -701,29 +699,23 @@ class File_Synchronizer
 			// If the current file is a directory we recursively copy it to the
 			// destination path. If it is a regulr file we just copy it.
 
-			if(DEBUG_MODE)
+			if($this->debug_mode)
 				echo "Copying '" . $path_to_copy . "' -> '" . $destination_path . "'\n";
 
 			if(is_dir($path_to_copy))
 			{
-				$result = copy_directory($path_to_copy, $destination_path);
-
-				if(!$result)
-					return false;
+				copy_directory($path_to_copy, $destination_path);
 			}
 			else
 			{
 				$result = true;
-
-				if(!SIMULATE)
-					$result = copy($path_to_copy, $destination_path);
+				if(!$this->simulate)
+					$result = @copy($path_to_copy, $destination_path);
 				
 				if(!$result)
-					return false;
+					throw new File_Copy_Exception("Unable to copy the file '" . $path_to_copy . "' to '" . $$destination_path . "'");
 			}
 		}
-
-		return true;
 	}
 }
 ?>
