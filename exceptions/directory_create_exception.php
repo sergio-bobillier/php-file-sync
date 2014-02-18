@@ -22,7 +22,7 @@
 require_once("synchronization_exception.php");
 
 /** Exception to be thrown when the application fails to create a directory in
- *  one  of the paths.
+ *  one of the paths.
  *
  *  @author Sergio Bobillier Ceballos
  *
@@ -30,7 +30,7 @@ require_once("synchronization_exception.php");
 
 class Directory_Create_Exception extends Synchronization_Exception
 {
-	/** The exist code for this exception.
+	/** The exit code for this exception.
 	 *
 	 *  @var int
 	 *

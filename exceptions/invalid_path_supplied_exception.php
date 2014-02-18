@@ -30,7 +30,7 @@ require_once("synchronization_exception.php");
 
 class Invalid_Path_Supplied_Exception extends Synchronization_Exception
 {
-	/** The exist code for this exception.
+	/** The exit code for this exception.
 	 *
 	 *  @var int
 	 *
