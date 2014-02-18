@@ -2,7 +2,7 @@
 
 /*
  *  PHP File Synchronization Script
- *  Copyright (C) 2013 Sergio Bobillier Ceballos <sergio.bobillier@gmail.com>
+ *  Copyright (C) 2014 Sergio Bobillier Ceballos <sergio.bobillier@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
