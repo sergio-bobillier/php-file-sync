@@ -108,7 +108,7 @@ try
 
 	// End of the script
 
-	echo "Syncrhonization succesful!\n";
+	echo "Synchronization successful!\n";
 	exit(0);
 }
 catch(Synchronization_Exception $sync_ex)
