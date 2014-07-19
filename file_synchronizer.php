@@ -717,7 +717,7 @@ class File_Synchronizer
 					$result = @copy($path_to_copy, $destination_path);
 				
 				if(!$result)
-					throw new File_Copy_Exception("Unable to copy the file '" . $path_to_copy . "' to '" . $$destination_path . "'");
+					throw new File_Copy_Exception("Unable to copy the file '" . $path_to_copy . "' to '" . $destination_path . "'");
 			}
 		}
 	}
