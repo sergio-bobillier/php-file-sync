@@ -82,7 +82,7 @@ stdout.
 ### Logging elsewhere
 
 If you want the class to send it's output somewhere else you must create your
-own logging class which iherits from the Logger class and add the desired
+own logging class which inherits from the Logger class and add the desired
 code, for example:
 
 ```php
