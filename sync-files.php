@@ -20,6 +20,7 @@
  */
 
 require_once("file_synchronizer.php");
+require_once("loggers/console_logger.php");
 
 /*******************************************************************************
  * This is the main script
@@ -36,6 +37,17 @@ $settings = array();
 require_once("settings.php");
 $file_synchronizer = new File_Synchronizer($settings);
 
+$logger = null;
+
+// If debug_mode is enabled in the settings array we create a new console
+// logger and pass it to the class so it logs it's output to it.
+
+if($settings["debug_mode"] == true)
+{
+	$logger = new Console_Logger();
+	$file_synchronizer->set_logger($logger);
+}
+
 /*******************************************************************************
  * Last synchronization date
  *
@@ -50,7 +62,8 @@ $file_synchronizer = new File_Synchronizer($settings);
 
 // Load and set up the time of the last synchronization
 
-echo "Trying to retrieve the time of the last synchronization...\n";
+if($logger != null)
+	$logger->log_message("Trying to retrieve the time of the last synchronization...");
 
 $last_sync_time = 0;
 
@@ -64,8 +77,12 @@ if($last_sync_file)
 	
 	if(!preg_match($reg_ex, $last_sync_time))
 	{
-		echo "Last synchronization time does not have the right format.\n";
-		echo "Asuming the paths have never been synchronized before.\n";
+		if($logger != null)
+		{
+			$logger->log_message("Last synchronization time does not have the right format.");
+			$logger->log_message("Asuming the paths have never been synchronized before.");
+		}
+
 		$last_sync_time = 0;
 	}
 
@@ -73,14 +90,16 @@ if($last_sync_file)
 }
 else
 {
-	echo "Could not open file asuming the paths have never been synchronized\n";
+	if($logger != null)
+		$logger->log_message("Could not open file asuming the paths have never been synchronized");
 }
 
 $file_synchronizer->set_last_sync_time($last_sync_time);
 
 try
 {
-	echo "Starting synchronization...\n\n";
+	if($logger != null)
+		$logger->log_message("Starting synchronization...");
 
 	// Start the synchronization
 
@@ -89,7 +108,8 @@ try
 	// We save the current time to the file. This is the time the last
 	// synchronization was made.
 
-	echo "Saving the last synchronization time to disk.\n";
+	if($logger != null)
+		$logger->log_message("Saving the last synchronization time to disk...");
 
 	$last_sync_time = time();
 
@@ -104,19 +124,26 @@ try
 		}
 		else
 		{
-			echo "Could not save the last synchronization time, unable to open the file for writing.\n";
+			if($logger != null)
+				$logger->log_message("Could not save the last synchronization time, unable to open the file for writing.");
 		}
 	}
 
 	// End of the script
 
-	echo "Synchronization successful!\n";
+	if($logger != null)
+		$logger->log_message("Synchronization successful!");
+
 	exit(0);
 }
 catch(Synchronization_Exception $sync_ex)
 {
-	echo "ERROR: The synchronization process have failed!. The exit code is: " . $sync_ex->get_exit_code() . "\n";
-	echo "\t" . $sync_ex->getMessage() . "\n";
+	if($logger != null)
+	{
+		$logger->log_message("ERROR: The synchronization process have failed!. The exit code is: " . $sync_ex->get_exit_code());
+		$logger->log_message("\t" . $sync_ex->getMessage());
+	}
+
 	exit($sync_ex->get_exit_code());
 }
 

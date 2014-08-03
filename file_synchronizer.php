@@ -36,14 +36,6 @@ require_once("exceptions/directory_create_exception.php");
 
 class File_Synchronizer
 {
-	/** If set to true it makes the script print every actions it performs.
-	 *
-	 *  @var boolean
-	 *
-	 */
-
-	private $debug_mode = true;
-
 	/** If set to true, it will cause the script not not take any real actions
 	 *  only show output.
 	 *
@@ -105,9 +97,20 @@ class File_Synchronizer
 	 *  this timestamp is used to avoid copying files twice (in one direction
 	 *  and then in the other)
 	 *
+	 *  @var int
+	 *
 	 */
 
 	private $sync_start_time = 0;
+
+	/** The log to which the class will log all the messages. If null the class
+	 *  won't log anything.
+	 *
+	 *  @var object
+	 *
+	 */
+
+	private $logger = null;
 
 	/** Class constructor. Copy settings from settings array into class
 	 *  attributes if the corresponding setter function exists.
@@ -120,38 +123,18 @@ class File_Synchronizer
 		{
 			foreach($settings as $setting => $value)
 			{
+				// The logger MUST be passed by reference so, if it is found in
+				// the settings array it is just discarded.
+
+				if($setting == "logger")
+					continue;
+
 				$method_name = "set_" . $setting;
 
 				if(method_exists($this, $method_name))
 					$this->$method_name($value);
 			}
 		}
-	}
-
-	/** Sets a boolean value that determines wether the script will output all
-	 *  the actions it performs to stdout.
-	 *
-	 *  @param boolean $debug_mode True to make the script output the actions
-	 *  	it takes, false to make it perform quietly.
-	 *
-	 */
-
-	public function set_debug_mode($debug_mode)
-	{
-		$this->debug_mode = $debug_mode;
-	}
-
-	/** Returns a boolean value that tells if the script will be printing the
-	 *  actions it takes to stdout or not.
-	 *
-	 *  @return boolean True if the script will be printing to stdout, false
-	 *  	otherwise.
-	 *
-	 */
-
-	public function get_debug_mode($debug_mode)
-	{
-		return $this->debug_mode;
 	}
 
 	/** Sets a boolean value that determines wether the script will take any
@@ -305,6 +288,30 @@ class File_Synchronizer
 		return $this->last_sync_time;
 	}
 
+	/** Set the logger class. The synchronizer will use this class to log it's
+	 *  output.
+	 *
+	 *  @param object $logger The loger class. If null is given the class won't
+	 *  	log any message.
+	 *
+	 */
+
+	public function set_logger(&$logger)
+	{
+		$this->logger = &$logger;
+	}
+
+	/** Returns a reference to the logger class.
+	 *
+	 *  @return object A reference to the logger class.
+	 *
+	 */
+
+	public function &get_logger()
+	{
+		return $this->logger;
+	}
+
 	/** Start the synchronization process. Checks both paths and then sync them.
 	 *
 	 *  @param string $path_a One of the paths to sync. If ommited then the
@@ -326,8 +333,8 @@ class File_Synchronizer
 		// if the synchronization is being run in simulation mode let the user
 		// know so.
 
-		if($this->simulate == true)
-			echo "-- RUNNING IN SIMULATION MODE --\n\n";
+		if($this->simulate == true && $this->logger != null)
+			$this->logger->log_message("-- RUNNING IN SIMULATION MODE --");
 
 		if($path_a == null)
 			$path_a = $this->path_a;
@@ -365,13 +372,13 @@ class File_Synchronizer
 		// We synchronize the paths in both directions. We do not need to put a
 		// try/catch block the calling function should catch it.
 
-		if($this->debug_mode)
-			echo "Syncrhonizng '" . $path_a . "' -> '" . $path_b . "'\n";
+		if($this->logger != null)
+			$this->logger->log_message("Syncrhonizng '" . $path_a . "' -> '" . $path_b . "'");
 
 		$this->sync_paths($path_a, $path_b);
 
-		if($this->debug_mode)
-			echo "Syncrhonizng '" . $path_b . "' -> '" . $path_a . "'\n";
+		if($this->logger != null)
+			$this->logger->log_message("Syncrhonizng '" . $path_b . "' -> '" . $path_a . "'");
 
 		$this->sync_paths($path_b, $path_a);
 	}
@@ -435,8 +442,8 @@ class File_Synchronizer
 				
 				if($is_directory)
 				{
-					if($this->debug_mode)
-						echo "Syncrhonizng '" . $new_path_a . "' -> '" . $new_path_b . "'\n";
+					if($this->logger != null)
+						$this->logger->log_message("Syncrhonizng '" . $new_path_a . "' -> '" . $new_path_b . "'");
 
 					// We recursively synchornize the directory with it's
 					// counterpart in the other path. Note that if an error
@@ -498,8 +505,8 @@ class File_Synchronizer
 
 					if($copy_file == true)
 					{
-						if($this->debug_mode)
-							echo "Copying '" . $new_path_a . "' -> '" . $new_path_b . "'\n";
+						if($this->logger != null)
+							$this->logger->log_message("Copying '" . $new_path_a . "' -> '" . $new_path_b . "'");
 
 						$result = true;
 						if(!$this->simulate)
@@ -547,8 +554,8 @@ class File_Synchronizer
 					}
 					else
 					{
-						if($this->debug_mode)
-							echo "Removing '" . $new_path_a . "'\n";
+						if($this->logger != null)
+							$this->logger->log_message("Removing '" . $new_path_a . "'");
 
 						$result = true;
 						if(!$this->simulate)
@@ -563,11 +570,11 @@ class File_Synchronizer
 				else
 				{
 					// Since the file was last modified after the last
-					// synchronization we asume that the file is new on this path
-					// and thus we should copy it to the other path.
+					// synchronization we asume that the file is new on this
+					// path and thus we should copy it to the other path.
 
-					if($this->debug_mode)
-						echo "Copying '" . $new_path_a . "' -> '" . $new_path_b . "'\n";
+					if($this->logger != null)
+						$this->logger->log_message("Copying '" . $new_path_a . "' -> '" . $new_path_b . "'");
 
 					if($is_directory)
 					{
@@ -629,8 +636,8 @@ class File_Synchronizer
 			}
 			else
 			{
-				if($this->debug_mode)
-					echo "Removing '" . $path_to_delete . "'\n";
+				if($this->logger != null)
+					$this->logger->log_message("Removing '" . $path_to_delete . "'");
 
 				$result = true;
 
@@ -646,8 +653,8 @@ class File_Synchronizer
 
 		// Finally we remove the directory itself.
 
-		if($this->debug_mode)
-			echo "Removing '" . $path . "'\n";
+		if($this->logger != null)
+			$this->logger->log_message("Removing '" . $path . "'");
 
 		$result = true;
 
@@ -676,8 +683,8 @@ class File_Synchronizer
 	{
 		// First we try to create the destination directory.
 
-		if($this->debug_mode)
-			echo "Creating '" . $destination . "'\n";
+		if($this->logger != null)
+			$this->logger->log_message("Creating '" . $destination . "'");
 
 		$result = true;
 		if(!$this->simulate)
@@ -709,8 +716,8 @@ class File_Synchronizer
 			// If the current file is a directory we recursively copy it to the
 			// destination path. If it is a regulr file we just copy it.
 
-			if($this->debug_mode)
-				echo "Copying '" . $path_to_copy . "' -> '" . $destination_path . "'\n";
+			if($this->logger != null)
+				$this->logger->log_message("Copying '" . $path_to_copy . "' -> '" . $destination_path . "'");
 
 			if(is_dir($path_to_copy))
 			{
