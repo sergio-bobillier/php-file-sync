@@ -5,9 +5,9 @@ A PHP File Synchronization script to keep two locations' files synchronized.
 
 This is a PHP class to synchronize files, you can use it as a command line script
 or within your own project. To keep two paths synchronized. This means, if
-you create a file in one location it will be copied to the other location. Also
-if you modify a file or rename it those changes will also be reflected over the
-other location.
+you create a file in one location it will be copied over to the other location.
+Also if you modify a file or rename it those changes will also be reflected over
+the other location.
 
 ## How to use
 
@@ -53,9 +53,11 @@ And that is about it. Pretty easy huh?
 
 4. If you want the class to log it's output instantiate a Logger class
 	and pass it to the class (see the **About logging** section for
-	details:
+	details):
 
 	<pre>
+	require_once("console_logger.php");
+
 	$logger = new Console_Logger();
 	$file_synchronizer->set_logger($logger);
 	</pre>
@@ -66,7 +68,7 @@ And that is about it. Pretty easy huh?
 	<pre>$file_synchronizer->set_last_sync_time($last_sync_time);</pre>
 
 Check the set_ functions in the class or the settings section for all the
-setting you can adjust.
+settings you can adjust.
 
 Finally fire away the synchronization process:
 
@@ -110,7 +112,7 @@ class DB_Logger extends Logger
 	public function log_message($message)
 	{
 		$sql = "INSERT INTO Log_Table(log_date, message)" .
-			" VALUES(NOW(), '" . $message . "')";
+			" VALUES(NOW(), '" . $message . "');";
 		mysql_query($sql, $this->conn);
 	}
 }
@@ -119,7 +121,7 @@ class DB_Logger extends Logger
 Off course you might want to use prepared statements ;)
 
 Then you create an instance of the Logger class and pass it to the file
-synchronizing class:
+synchronizer class:
 
 ```php
 $db_logger = new DB_Logger();
@@ -160,14 +162,15 @@ Here is a a list of all settings that can be adjusted:
 		runs.
 		
 	    Note that this setting can no longer be set in the File_Synchronizer
-	    class. To make the class log it's output provide it with a Logger class,
-	    see the <b>About logging</b> section for details.</dd>
+	    class or through the $settings array. To make the class log it's
+	    output provide it with a Logger class, see the <b>About logging</b>
+	    section for details.</dd>
 
 	<dt>simulate (boolean)</dt>
 	<dd>This option will cause the script not to take any action. It will run
 		as if it were doing its job but won't actually copy, delete or create
 		any files or folders. You can set this setting to <b>true</b> if you
-		want to see what will the script do.
+		want to see what the script would do.
 
 		Is a good idea to run a simulation before running the script for real
 		to make sure the script won't damage any files or cause data loss.</dd>
