@@ -80,6 +80,8 @@ $file_synchronizer->set_last_sync_time($last_sync_time);
 
 try
 {
+	echo "Starting synchronization...\n\n";
+
 	// Start the synchronization
 
 	$file_synchronizer->start_sync();

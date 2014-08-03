@@ -323,6 +323,12 @@ class File_Synchronizer
 
 	public function start_sync($path_a = null, $path_b = null)
 	{
+		// if the synchronization is being run in simulation mode let the user
+		// know so.
+
+		if($this->simulate == true)
+			echo "-- RUNNING IN SIMULATION MODE --\n\n";
+
 		if($path_a == null)
 			$path_a = $this->path_a;
 
