@@ -72,6 +72,64 @@ Finally fire away the synchronization process:
 		// Do something here to handle a synchronization exception
 	}
 
+## About logging
+
+For the class to log it's output you must provide it with a Logger. A Logger is
+a class which inherits from the Logger class in the loggers directory. A basic
+console logging class (Console_Logger) is provided, which sends everything to
+stdout.
+
+### Logging elsewhere
+
+If you want the class to send it's output somewhere else you must create your
+own logging class which iherits from the Logger class and add the desired
+code, for example:
+
+```php
+require_once("logger.php");
+
+/** A basic DB logging class.
+ *
+ */
+
+class DB_Logger extends Logger
+{
+	public function __construct()
+	{
+		// Initialize the database here....
+	}
+
+	public function log_message($message)
+	{
+		$sql = "INSERT INTO Log_Table(log_date, message)" .
+			" VALUES(NOW(), '" . $message . "')";
+		mysql_query($sql, $this->conn);
+	}
+}
+```
+
+Off course you might want to use prepared statements ;)
+
+Then you create an instance of the Logger class and pass it to the file
+synchronizing class:
+
+```php
+$db_logger = new DB_Logger();
+$file_synchronizer->set_logger($db_logger);
+```
+
+Once a logger have been provided the class will log all it's output to
+that class.
+
+You can see a working example of this in the sync-files.php file.
+There the script instantiate the Console_Logger class and then
+pass it to the file synchronizer:
+
+```php
+$logger = new Console_Logger();
+$file_synchronizer->set_logger($logger);
+```
+
 ## Settings
 
 If you are using the class as a command line script you can adjust these settings
@@ -91,7 +149,11 @@ Here is a a list of all settings that can be adjusted:
 	<dd>It makes the script print every action it takes to stdout. You can set
 		this setting to <b>true</b> if you want to keep a log of the
 		synchronization process or just see the script output while it
-		runs.</dd>
+		runs.
+		
+	    Note that this setting can no longer be set in the File_Synchronizer
+	    class. To make the class log it's output provide it with a Logger class,
+	    see the <b>About logging</b> section for details.</dd>
 
 	<dt>simulate (boolean)</dt>
 	<dd>This option will cause the script not to take any action. It will run
