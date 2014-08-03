@@ -36,11 +36,10 @@ And that is about it. Pretty easy huh?
 
 	<pre>require_once("file_synchronizer.php");</pre>
 
-1. Create an array with the settings for the class:
+2. Create an array with the settings for the class:
 
 	<pre>
 	$settings = array();
-	$settings["debug_mode"] = true;
 	$settings["simulate"]  = false;
 	$settings["skip_hidden"] = true;
 	$settings["use_checksum"] = false;
@@ -48,11 +47,20 @@ And that is about it. Pretty easy huh?
 	$settings["path_b"] = "/media/backup/home";
 	</pre>
     
-2. Instantiate the class and pass on the settings array
+3. Instantiate the class and pass on the settings array
 
 	<pre>$file_synchronizer = new File_Synchronizer($settings);</pre>
 
-3. Adjust any other setting as desired, for example, the last time the
+4. If you want the class to log it's output instantiate a Logger class
+	and pass it to the class (see the **About logging** section for
+	details:
+
+	<pre>
+	$logger = new Console_Logger();
+	$file_synchronizer->set_logger($logger);
+	</pre>
+
+5. Adjust any other setting as desired, for example, the last time the
 	synchronization was performed
 
 	<pre>$file_synchronizer->set_last_sync_time($last_sync_time);</pre>
