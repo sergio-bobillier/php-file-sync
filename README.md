@@ -15,7 +15,7 @@ the other location.
 
 1. Copy settings-sample.php to settings.php
 
-	<pre>cp settings-smaple.php settings.php</pre> 
+	<pre>cp settings-sample.php settings.php</pre> 
 
 2. Adjust the settings in the file to your needs. (See the settings section).
 3. Run the script from the command line:
