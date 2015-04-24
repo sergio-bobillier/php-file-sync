@@ -30,6 +30,8 @@ the other location.
 
 And that is about it. Pretty easy huh?
 
+**IMPORTANT** The command line script is designed to synchronize only one pair of directories. If you need three way synchronization or would like to synchronize multiple locations then this script is not for you. In such case please read the **Inside your application** section ahead.
+
 ### Inside your application
 
 1. Include the class file in your project
