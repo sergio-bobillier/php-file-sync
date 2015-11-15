@@ -1,7 +1,7 @@
 php-file-sync
 =============
 
-A PHP File Synchronization script to keep two locations' files synchronized.
+A PHP two-way File Synchronization script to keep two locations' files synchronized.
 
 This is a PHP class to synchronize files, you can use it as a command line script
 or within your own project. To keep two paths synchronized. This means, if
@@ -58,7 +58,7 @@ And that is about it. Pretty easy huh?
 	details):
 
 	<pre>
-	require_once("console_logger.php");
+	require_once("loggers/console_logger.php");
 
 	$logger = new Console_Logger();
 	$file_synchronizer->set_logger($logger);
