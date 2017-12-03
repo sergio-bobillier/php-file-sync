@@ -156,63 +156,55 @@ settings file and then editing it to your needs:
 
 Here is a a list of all settings that can be adjusted:
 
-<dl>
-	<dt>debug_mode (boolean)</dt>
-	<dd>It makes the script print every action it takes to stdout. You can set
-		this setting to <b>true</b> if you want to keep a log of the
-		synchronization process or just see the script output while it
-		runs.
-		
-	    Note that this setting can no longer be set in the File_Synchronizer
-	    class or through the $settings array. To make the class log it's
-	    output provide it with a Logger class, see the <b>About logging</b>
-	    section for details.</dd>
+### debug_mode (boolean)
+It makes the script print every action it takes to stdout. You can set this setting
+to **true** if you want to keep a log of the synchronization process or just see the
+script output while it runs.
 
-	<dt>simulate (boolean)</dt>
-	<dd>This option will cause the script not to take any action. It will run
-		as if it were doing its job but won't actually copy, delete or create
-		any files or folders. You can set this setting to <b>true</b> if you
-		want to see what the script would do.
+Note that this setting can no longer be set in the File_Synchronizer class or through
+the $settings array. To make the class log it's output provide it with a Logger class,
+see the **About logging** section for details.
 
-		Is a good idea to run a simulation before running the script for real
-		to make sure the script won't damage any files or cause data loss.</dd>
-		
-	<dt>skip_hidden (boolean)</dt>
-	<dd>If set to <b>true</b> it will cause the script to skip all hidden files and
-		folders (that start with .).</dd>
-		
-	<dt>use_checksum (boolean)</dt>
-	<dd>Set this setting to <b>true</b> to make the script compare files using a
-		checksum. This will cause the script not to copy files whose content
-		haven't changed even if their modification dates differ.
+### simulate (boolean)
+This option will cause the script not to take any action. It will run as if it were
+doing its job but won't actually copy, delete or create any files or folders. You can
+set this setting to **true** if you want to see what the script would do.
 
-		This feature is very helpful to avoid copying files that haven't
-		actually changed but can slow down the synchronization process.</dd>
+Is a good idea to run a simulation before running the script for real to make sure
+the script won't damage any files or cause data loss.
 		
-	<dt>path_a (string)</dt>
-	<dd>One of the paths that will be synchronized. The order in which you set
-		the paths shouldn't make any difference, however if you are seeing
-		unexpected results you can try to switch them.</dd>
+### skip_hidden (boolean)
+If set to **true** it will cause the script to skip all hidden files and folders
+(that start with .).
+		
+### use_checksum (boolean)
+Set this setting to **true** to make the script compare files using a checksum.
+This will cause the script not to copy files whose content haven't changed even if
+their modification dates differ.
 
-	<dt>path_b (string)</dt>
-	<dd>One of the paths that will be synchronized. The order in which you set
-		the paths shouldn't make any difference, however if you are seeing
-		unexpected results you can try to switch them.</dd>
+This feature is very helpful to avoid copying files that haven't actually changed
+but can slow down the synchronization process.
 		
-	<dt>last_sync_time (int)</dt>
-	<dd>This setting tells the class when the synchronization was last performed
-		the class uses this as a reference time to determine if a file is
-		new in one of the paths or it was deleted in the other or if the
-		file is worth copying.
+### path_a (string)
+One of the paths that will be synchronized. The order in which you set the paths
+shouldn't make any difference, however if you are seeing unexpected results you can
+try to switch them.
+
+### path_b (string)
+One of the paths that will be synchronized. The order in which you set the paths
+shouldn't make any difference, however if you are seeing unexpected results you can
+try to switch them.
 		
-		The time of the last synchronization is represented as a unix
-		timestamp.
-	
-		You only need to set this if you are using the class within your
-		own project. If you are using the class as a command line script
-		the sync-files.php file will automatically take care of this.
-		
-		This setting was provided mainly as a way to give the user a way
-		to store the last synchronization time in some other location,
-		like a database.</dd>
-</dl>
+### last_sync_time (int)
+This setting tells the class when the synchronization was last performed the class
+uses this as a reference time to determine if a file is new in one of the paths or
+it was deleted in the other or if the file is worth copying.
+
+The time of the last synchronization is represented as a unix timestamp.
+
+You only need to set this if you are using the class within your own project. If
+you are using the class as a command line script the sync-files.php file will
+automatically take care of this.
+
+This setting was provided mainly as a way to give the user a way to store the last
+synchronization time in some other location, like a database.
